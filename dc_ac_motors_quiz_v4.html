@@ -1,0 +1,170 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+#app{padding:1.5rem 0}
+.progress-bar-bg{height:6px;background:var(--color-background-secondary);border-radius:3px;margin-bottom:0.5rem}
+.progress-bar-fill{height:6px;background:#1D9E75;border-radius:3px;transition:width 0.4s}
+.meta{display:flex;justify-content:space-between;font-size:13px;color:var(--color-text-secondary);margin-bottom:1.5rem}
+.q-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem 1.5rem;margin-bottom:1rem}
+.q-number{font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem}
+.q-text{font-size:15px;font-weight:500;color:var(--color-text-primary);line-height:1.5;margin-bottom:1.25rem}
+.choices{display:flex;flex-direction:column;gap:8px}
+.choice-btn{background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:10px 14px;font-size:14px;color:var(--color-text-primary);cursor:pointer;text-align:left;display:flex;align-items:flex-start;gap:10px;transition:background 0.15s,border-color 0.15s}
+.choice-btn:hover:not(:disabled){background:var(--color-background-secondary);border-color:var(--color-border-primary)}
+.choice-btn:disabled{cursor:default}
+.choice-label{font-weight:500;min-width:18px;color:var(--color-text-secondary);flex-shrink:0}
+.choice-btn.correct{background:#EAF3DE;border-color:#3B6D11;color:#27500A}
+.choice-btn.correct .choice-label{color:#3B6D11}
+.choice-btn.wrong{background:#FCEBEB;border-color:#A32D2D;color:#791F1F}
+.choice-btn.wrong .choice-label{color:#A32D2D}
+.feedback{margin-top:0.75rem;font-size:13px;line-height:1.5;padding:8px 12px;border-radius:var(--border-radius-md);display:none}
+.feedback.show{display:block}
+.feedback.correct{background:#EAF3DE;color:#27500A;border:0.5px solid #3B6D11}
+.feedback.wrong{background:#FCEBEB;color:#791F1F;border:0.5px solid #A32D2D}
+.nav{display:flex;align-items:center;justify-content:space-between;margin-top:1.25rem;gap:12px}
+.btn-nav{background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:8px 20px;font-size:14px;color:var(--color-text-primary);cursor:pointer}
+.btn-nav:hover{background:var(--color-background-secondary)}
+.btn-nav:disabled{opacity:0.4;cursor:default}
+.score-chip{font-size:13px;font-weight:500;color:var(--color-text-secondary)}
+.results{text-align:center;padding:2rem 1rem}
+.results h2{font-size:22px;font-weight:500;margin-bottom:0.5rem}
+.results p{color:var(--color-text-secondary);margin-bottom:1.5rem}
+.score-big{font-size:48px;font-weight:500;color:#1D9E75;line-height:1}
+.btn-restart{background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:10px 28px;font-size:15px;color:var(--color-text-primary);cursor:pointer;margin-top:1.5rem}
+.btn-restart:hover{background:var(--color-background-secondary)}
+.result-breakdown{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:1.5rem 0}
+.rb-card{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:0.75rem;text-align:center}
+.rb-card .rb-n{font-size:22px;font-weight:500}
+.rb-card .rb-l{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+</style>
+
+<div id="app">
+<h2 class="sr-only">Aircraft electric motors multiple choice quiz — 41 questions (By Mr. Lee)</h2>
+<div class="header">
+  <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog"></div></div>
+  <div class="meta"><span id="qmeta">Question 1 of 40</span><span class="score-chip" id="score-live">Score: 0 / 0</span></div>
+</div>
+<div id="quiz-area"></div>
+<div class="nav">
+  <button class="btn-nav" id="prevBtn" onclick="nav(-1)" disabled>← Previous</button>
+  <button class="btn-nav" id="nextBtn" onclick="nav(1)">Next →</button>
+</div>
+</div>
+
+<script>
+const QS=[
+{q:"What energy conversion does a DC motor perform?",c:["DC electrical energy into mechanical energy","AC electrical energy into heat","Chemical energy into electrical energy","Mechanical energy into DC electrical energy"],a:0,f:"A DC motor is a rotating machine that transforms DC electrical energy into mechanical energy. It is used throughout the aircraft — from starters to autopilots."},
+{q:"According to the FAA Aviation Maintenance Technician Handbook, a DC motor consists of which two principal parts?",c:["End frame and pole pieces","Slip rings and end cap","Field assembly and armature assembly","Brush assembly and commutator"],a:2,f:"The handbook states a DC motor consists of two principal parts: a field assembly and an armature assembly. The armature is the rotating part where current-carrying wires are acted upon by the magnetic field."},
+{q:"A current-carrying wire placed between two magnets experiences a force. In which direction does that force act?",c:["At right angles to both the wire and the magnetic field","Opposite to the direction of electron flow","Along the direction of current flow","Along the direction of the magnetic field lines"],a:0,f:"The force on a current-carrying wire in a magnetic field acts at right angles to the wire AND at right angles to the magnetic field — it is neither attraction nor repulsion."},
+{q:"When current flows through a wire in a magnetic field, the wire is always pushed away from which side?",c:["The side where the two magnetic fields add together and are strongest","The north pole side regardless of current direction","The side closest to the south pole","The side where the two magnetic fields cancel each other out"],a:0,f:"The wire is always pushed away from the side where the combined fields are strongest. Where the wire's own magnetic field and the external field reinforce each other, the strong resultant field pushes the wire away."},
+{q:"What is the name for the tendency of a force to produce rotation in a motor coil?",c:["Slip","Counter EMF","Armature reaction","Torque"],a:3,f:"The tendency of a force to produce rotation is called torque. In a DC motor, torque is developed by the reacting magnetic fields around the current-carrying coil."},
+{q:"A motor coil is in the position where it is cutting the maximum number of magnetic field lines. What is the torque at this instant?",c:["50 percent of maximum","100 percent — this is the position of greatest torque","Torque cannot be determined without knowing the current","Zero — the coil is about to stall"],a:1,f:"Torque reaches 100 percent (maximum) when the coil is broadside to the field and cutting the greatest number of field lines. This produces the greatest turning force on the coil."},
+{q:"A motor coil is in the position where it is cutting zero magnetic field lines — the coil sides are moving along the field instead of across it. What is the torque?",c:["Zero — no lines are being cut so no turning force is produced","Maximum — this is when the brushes make best contact","100 percent — field lines are fully aligned","50 percent"],a:0,f:"When the coil sides travel parallel to the field lines rather than cutting across them, no turning force is generated. Torque is zero at this position. The commutator reverses current just before this point to keep the motor spinning."},
+{q:"What is the purpose of the commutator in a DC motor?",c:["To regulate motor speed by varying resistance","To hold the brushes firmly against the armature","To insulate the armature windings from the shaft","To reverse the current in the coil at the moment it would otherwise stall, maintaining continuous rotation"],a:3,f:"The commutator reverses the direction of current in the coil just as it reaches the zero-torque position, restoring torque and keeping the motor rotating continuously."},
+{q:"In a practical DC motor, why are many coils wound on the armature instead of just one?",c:["To increase the motor's voltage rating","To ensure coils are always near the poles so torque is both continuous and strong","To provide multiple speed settings","To reduce the number of commutator brushes needed"],a:1,f:"With many coils spaced around the armature, there are always coils near the magnetic poles regardless of armature position, making torque both continuous and strong."},
+{q:"Why is the armature core of a DC motor made of laminated soft iron rather than solid iron?",c:["Solid iron cannot be magnetized by induction","Solid iron is too heavy for aircraft use","Laminations reduce eddy current losses","Laminated iron produces a stronger magnetic field"],a:2,f:"A solid iron core revolving in a magnetic field would have large eddy currents induced in it, causing heat and wasting energy. Thin iron laminations insulated from each other interrupt these currents and reduce losses significantly."},
+{q:"What holds the armature windings in their slots to prevent them from flying out at high rotational speed?",c:["The end frame bearings","Fish paper fiber insulation","The commutator segments clamping the wire ends","Wedges or steel bands"],a:3,f:"Wedges or steel bands hold the armature windings in their slots and prevent them from flying out when the armature spins at high speeds."},
+{q:"The commutator segments in a DC motor are insulated from each other and from the shaft by which material?",c:["Rubber compound","Mica","Varnish coating","Fish paper"],a:1,f:"Copper commutator segments are insulated from each other and from the armature shaft by pieces of mica. Insulated wedge rings also hold the segments in place."},
+{q:"What are the four major assemblies of a practical DC motor?",c:["Rotor, stator, slip rings, and end bells","Armature assembly, field assembly, brush assembly, and end frame","Commutator, brushes, field coils, and bearings","Core, windings, pole pieces, and housing"],a:1,f:"The four major parts of a practical DC motor are the armature assembly, the field assembly, the brush assembly, and the end frame."},
+{q:"Why is the armature of a practical DC motor placed between the poles of an electromagnet rather than a permanent magnet?",c:["Permanent magnets are prohibited in certified aircraft","Electromagnets are lighter in weight and produce stronger magnetism","An electromagnet fed from the same power source as the armature provides a much stronger and controllable magnetic field","Permanent magnets would reverse polarity with AC and provide much stronger magnetic lines"],a:2,f:"The armature is placed between the poles of an electromagnet because a much stronger magnetic field can be furnished. The magnetizing current comes from the same source supplying the armature."},
+{q:"In a series DC motor, the field windings consist of relatively few turns of heavy wire connected in series with the armature. What happens when armature current increases?",c:["The field weakens because heavy wire has higher resistance","Field current stays constant because the shunt path bypasses it","Only the armature magnetism increases; the field is unaffected","Both field and armature magnetism increase simultaneously"],a:3,f:"In a series motor, field and armature windings carry the same current. Any increase in current strengthens the magnetism of both the field AND the armature at the same time — this is why the series motor produces high starting torque."},
+{q:"A series motor is running with its mechanical load suddenly removed. What is the danger?",c:["The commutator will arc excessively and burn the brushes","The motor will draw too little current and stop","The motor may accelerate to dangerously high speed","The motor will overheat because field current becomes too high"],a:2,f:"A series motor's speed is heavily load-dependent. With no load, speed can increase until the armature literally flies apart. Series motors must never be operated without a mechanical load."},
+{q:"Which aircraft systems typically use series DC motors because of their high starting torque under heavy loads?",c:["Flux gate compasses and turn coordinators","AC bus inverters and voltage regulators","Fuel quantity transmitters and EGT gauges","Engine starters, landing gear actuators, cowl flaps, and wing flaps"],a:3,f:"Series motors are used in aircraft as engine starters and for raising/lowering landing gears, cowl flaps, and wing flaps — all applications that demand high starting torque against a heavy load."},
+{q:"What characteristic makes the shunt motor well suited for constant-speed applications?",c:["Its speed varies very little with changes in load because field current is held constant","Its field current automatically increases as load increases","It draws less starting current than any other motor type","Its high starting torque equals that of a series motor"],a:0,f:"The shunt motor's field is connected directly across the power supply, keeping field current constant regardless of load. As a result, speed varies only slightly with load — ideal for constant-speed applications."},
+{q:"A compound DC motor's starting torque compared to a pure shunt motor is:",c:["Lower, because the series field opposes the shunt field at start","Higher than a shunt motor but lower than a series motor of the same size","Equal to a series motor of the same size","Lower than both series and shunt motors"],a:1,f:"The compound motor's starting torque is higher than a shunt motor (thanks to the added series field winding) but lower than a series motor. Its speed regulation falls between the two as well."},
+{q:"What is counter electromotive force (back EMF) in a DC motor?",c:["The inductive spike voltage produced when the motor is switched off","The resistance voltage drop across the armature windings","A voltage induced in the rotating armature that opposes the applied supply voltage","The voltage drop across the field winding at full speed"],a:2,f:"As the armature rotates in the magnetic field, a voltage is induced in its windings. This induced voltage opposes the supply voltage and is called back EMF or counter EMF. It is what limits armature current during normal operation."},
+{q:"What must happen to an intermittent-duty motor that has been operated under full load for an extended period?",c:["It must be serviced and its brushes replaced before restart.","It must be replaced immediately with a continuous-duty motor.","It can continue operating at reduced power without any risk.","It must be allowed to cool down before it can be operated again."],a:3,f:"Intermittent-duty motors are only designed for short operating periods. Running them too long causes overheating, so they must cool completely before being restarted."},
+{q:"When a heavy load is applied and slows a running DC motor down, what happens to counter EMF and supply current?",c:["Counter EMF increases and supply current decreases","Counter EMF stays the same; only speed changes","Counter EMF decreases and supply current increases to provide more torque","Both counter EMF and current increase together to provide more torque"],a:2,f:"Slowing the motor reduces the counter EMF. With less back EMF opposing the supply, more current flows from the source — automatically increasing torque to handle the heavier load."},
+{q:"Copper losses in a DC motor are proportional to the square of the current (I²R losses). What physical effect do they produce?",c:["Eddy currents in the armature iron core","Heat dissipated in the resistance of the copper field and armature windings","Mechanical friction between brushes and commutator","Magnetic hysteresis in the iron pole pieces"],a:1,f:"Copper (I²R) losses occur when current flows through the resistance of the copper windings, converting electrical energy to heat. Because they scale with I², they become significant at high current levels."},
+{q:"Hysteresis losses occur in the armature core but NOT in the field magnets. Why not?",c:["The armature alternates magnetic directions, but the field magnets do not.","The field magnets are air-cooled and dissipate heat without loss","The field magnets are laminated more finely than the armature","The field magnets are made of non-magnetic steel"],a:0,f:"The rotating armature core is alternately magnetized in opposite directions, creating hysteresis losses. The DC field magnets are always magnetized in one direction and never reverse, so they have no hysteresis losses."},
+{q:"When inspecting a DC motor commutator that is dirty, what is the correct cleaning method?",c:["A wire brush followed by compressed air","A sandpaper followed by a blast of compressed air","A cloth moistened with the recommended cleaning solvent","Emery paper and light machine oil"],a:2,f:"Clean dirty commutators with a cloth moistened with the recommended cleaning solvent. Use fine sandpaper (000 or finer) only for rough or corroded surfaces — never emery paper, which leaves conductive metallic particles that can cause shorts."},
+{q:"A DC motor fails to run and the fuse is intact (not blown). What does the handbook say this most likely indicates?",c:["An open circuit somewhere in the external electrical circuit","Worn brushes causing high resistance","Excessive brush spring tension locking the commutator","A shorted armature winding"],a:0,f:"An intact fuse with a non-running motor points to an open circuit. A blown fuse would indicate a short or ground. Always check the external circuit first before replacing the motor."},
+{q:"What is a split-field motor and how does it reverse direction?",c:["A motor with two armatures on one shaft; direction reverses by switching which armature is powered","It uses two opposing windings and a switch to reverse rotation.","A motor that uses a double commutator to reverse armature current","A motor with split brushes that reverse contact polarity"],a:1,f:"A split-field motor has two field windings wound in opposite directions on the same pole. A single-pole, double-throw switch selects which winding carries current, reversing the magnetic field polarity and thus the direction of rotation."},
+{q:"How does increasing rheostat resistance in series with the shunt field windings affect motor speed?",c:["The rheostat bypasses the brushes, reducing friction and increasing speed","More resistance increases field current, strengthening the field and slowing the motor","More resistance decreases field current, weakening the field, reducing counter EMF","More resistance directly reduces armature current, decreasing heat and increasing speed"],a:2,f:"More resistance → less field current → weaker field → less counter EMF generated → more armature current flows momentarily → increased torque → motor speeds up until counter EMF rises back to a new balance point."},
+{q:"What is the key operating principle that produces torque in a three-phase AC induction motor?",c:["Direct current flowing through brushes and a commutator to create a fixed magnetic field","A horseshoe magnet mechanically rotating around the iron frame to induce voltage","A revolving magnetic field produced by multi-phase current flowing through coils wound on an iron frame","Alternating polarity created by a single-phase current switching direction through the armature"],a:2,f:"The three-phase induction motor depends on a revolving magnetic field. Two or more groups of coils wound on inwardly projecting poles of an iron frame carry multi-phase current, producing a rotating field that generates torque."},
+{q:"What is the squirrel cage rotor of an AC induction motor made of?",c:["Permanent magnet material surrounded by a soft iron frame","Solid steel with salient poles machined into the surface","Laminated silicon steel wound with insulated copper wire like an armature","Copper or aluminum bars embedded in an iron core and welded to end rings of high conductivity"],a:3,f:"The squirrel cage rotor has copper or aluminum bars embedded in longitudinal slots of an iron core, with both ends of the bars welded to heavy conducting end rings — the structure resembles a squirrel cage."},
+{q:"Why must there always be 'slip' in an AC induction motor — the rotor speed always falling slightly short of synchronous speed?",c:["Zero induced current at synchronous speed causes the rotor to slow down.","The stator field reverses polarity too rapidly for the heavy rotor to keep up","Slip rings are required to maintain the speed differential for proper operation","Mechanical friction always prevents the rotor from reaching synchronous speed"],a:0,f:"If the rotor reached synchronous speed, rotor bars would cut no field lines → no induced EMF → no current → no torque → rotor slows down. Slip is the necessary speed difference that sustains the induction process and keeps torque flowing."},
+{q:"A single-phase induction motor produces no starting torque on its own. Once it IS running, what keeps it turning?",c:["The rotor's momentum sustains its existing rotation.","A capacitor maintains a phase-shifted rotating field during normal running","Slip rings provide supplemental torque during normal operation","A centrifugal switch engages an auxiliary starting winding"],a:0,f:"Once rotating, the rotor's momentum helps it continue. The pulsating single-phase field, while not able to start the motor, provides a net torque in whichever direction the rotor is already moving."},
+{q:"The shaded-pole induction motor gets its starting torque from which mechanism?",c:["A centrifugal switch that engages a split-phase starting winding at low speed","DC excitation applied briefly to the rotor during startup","A capacitor connected in series with an auxiliary winding","A copper ring lags the magnetic flux, creating a weak rotating field."],a:3,f:"The copper shading ring encircles part of each pole face, causing the flux through the shaded portion to lag in time phase behind the unshaded portion. This produces a slight sweeping action across the pole face that generates enough torque to start a small motor."},
+{q:"What is the primary limitation of the shaded-pole motor that restricts it to small applications?",c:["It cannot operate on 400 Hz aircraft power","Poor power factor and low torque limit its application to small devices","It requires a separate DC excitation source for the rotor","It cannot reverse direction under any circumstances"],a:1,f:"The shaded-pole motor has very weak starting torque and a low power factor. Consequently it is built only in small sizes, with its greatest application in small fan motors where initial torque requirements are low."},
+{q:"In a capacitor-start motor, what device automatically disconnects the starting winding once the motor is running?",c:["The centrifugal switch opens as the motor accelerates","The capacitor discharges and self-opens the starting circuit","A voltage relay triggered by the running winding's back EMF","A solid-state current sensing relay"],a:0,f:"A centrifugal switch disconnects the starting winding automatically after the rotor attains approximately 25 percent of its rated speed, leaving only the main running winding energized."},
+{q:"How do you reverse the direction of a three-phase induction motor?",c:["Reverse all three leads simultaneously","Swap any two of the three leads to the motor","Reverse only the ground conductor","Add a phase-shifting capacitor across one winding"],a:1,f:"Swapping any two of the three leads reverses the phase sequence of the rotating magnetic field, which reverses the direction of rotation. This is the standard method for reversing three-phase induction motors."},
+{q:"Why is it impossible to reverse a shaded-pole motor by reconnecting its electrical leads?",c:["The motor has no accessible external leads","The shading ring's fixed physical position determines rotation direction","The starting capacitor fixes the rotation direction permanently","Shaded-pole motors require three-phase power and cannot be rewired"],a:1,f:"The direction of rotation in a shaded-pole motor is determined by which side of the pole face has the copper shading ring. This is a physical feature of the motor's construction — no electrical reconnection can change it."},
+{q:"What type of AC motor runs at exactly synchronous speed during normal operation, and how is this different from an induction motor?",c:["Induction motor — it uses slip rings to lock onto line frequency","Universal motor — it uses a commutator to synchronize with line frequency","Synchronous motor — its rotor locks magnetically to the rotating stator field","Shaded-pole motor — its copper ring forces synchronous operation"],a:2,f:"The synchronous motor's rotor locks magnetically with the rotating stator field and turns at exactly synchronous speed with zero slip. The induction motor always has some slip — the rotor runs slightly slower than the field."},
+{q:"The AC series motor (universal motor) can run on both AC and DC power. What makes this possible?",c:["Its permanent magnet field is unaffected by AC polarity changes","Slip rings automatically correct for polarity reversals on AC","It has no commutator, so polarity reversals do not affect it","Both fields reverse together, keeping the torque in the same direction"],a:3,f:"In a series motor, field and armature are connected in series. When AC reverses, both reverse together — so the torque (which depends on the product of field and armature current) always acts in the same direction. The motor works on either AC or DC."},
+{q:"What sound does a properly operating AC motor produce, and what abnormal sound specifically indicates an overloaded motor?",c:["A steady hum when normal; a grunting sound when overloaded","Silence when normal; a steady hum when overloaded","A clicking from brushes when normal; a knocking sound when overloaded","A steady hum when normal; a high-pitched whine when overloaded"],a:0,f:"A healthy AC motor hums evenly. An overloaded motor 'grunts.' A three-phase motor running on only two phases 'growls' and refuses to start. A knocking sound points to a loose armature coil, misaligned shaft, or worn bearings."},
+{q:"What does a knocking sound from a running AC motor most likely indicate?",c:["The motor is overloaded beyond its rated power","Excessive brush sparking at the commutator","A blown fuse in one phase of the supply","A loose armature coil, shaft out of alignment, or armature dragging due to worn bearings"],a:3,f:"A knocking sound generally indicates a loose armature coil, a shaft out of alignment, or armature dragging because of worn bearings — all mechanical problems. Overload is indicated by grunting, not knocking."}
+];
+
+let cur=0,answers=new Array(QS.length).fill(null),correct=new Array(QS.length).fill(false);
+
+function render(){
+  if(cur>=QS.length){showResults();return;}
+  const q=QS[cur];
+  const answered=cur<answers.length && answers[cur]!==null && answers[cur]!==undefined;
+  const pct=((cur+1)/QS.length*100).toFixed(0);
+  document.getElementById('prog').style.width=pct+'%';
+  document.getElementById('qmeta').textContent='Question '+(cur+1)+' of '+QS.length;
+  const scored=answers.filter(a=>a!==null).length;
+  const sc=correct.filter(Boolean).length;
+  document.getElementById('score-live').textContent='Score: '+sc+' / '+scored;
+  const labels=['A','B','C','D'];
+  let choicesHtml=q.c.map((ch,i)=>{
+    let cls='choice-btn';
+    if(answered){
+      if(i===q.a) cls+=' correct';
+      else if(i===answers[cur] && answers[cur]!==q.a) cls+=' wrong';
+    }
+    return `<button class="${cls}" onclick="pick(${i})" ${answered?'disabled':''}><span class="choice-label">${labels[i]}</span><span>${ch}</span></button>`;
+  }).join('');
+  const isCorrect=answered && correct[cur]===true;
+  const fb=answered?`<div class="feedback ${isCorrect?'correct':'wrong'} show">${isCorrect?'✓ Correct — ':'✗ Incorrect — '}${q.f}</div>`:`<div class="feedback"></div>`;
+  document.getElementById('quiz-area').innerHTML=`<div class="q-card"><div class="q-number">Question ${cur+1} of ${QS.length}</div><div class="q-text">${q.q}</div><div class="choices">${choicesHtml}</div>${fb}</div>`;
+  document.getElementById('prevBtn').disabled=cur===0;
+  document.getElementById('nextBtn').textContent=cur===QS.length-1?'Finish →':'Next →';
+}
+
+function pick(i){
+  if(cur>=QS.length)return;
+  if(answers[cur]!==null && answers[cur]!==undefined)return;
+  answers[cur]=i;
+  correct[cur]=(i===QS[cur].a);
+  render();
+}
+
+function nav(d){
+  cur+=d;
+  if(cur<0)cur=0;
+  if(cur>=QS.length){showResults();return;}
+  render();
+}
+
+function showResults(){
+  const sc=correct.filter(Boolean).length;
+  const tot=QS.length;
+  const pct=Math.round(sc/tot*100);
+  document.getElementById('prog').style.width='100%';
+  document.getElementById('qmeta').textContent='Quiz complete';
+  document.getElementById('score-live').textContent='';
+  document.querySelector('.nav').style.display='none';
+  document.getElementById('quiz-area').innerHTML=`<div class="results">
+    <div class="score-big">${pct}%</div>
+    <h2 style="margin-top:0.75rem">${pct>=80?'Great work!':pct>=60?'Good effort':'Keep studying!'}</h2>
+    <p>You answered ${sc} out of ${tot} questions correctly.</p>
+    <div class="result-breakdown">
+      <div class="rb-card"><div class="rb-n" style="color:#1D9E75">${sc}</div><div class="rb-l">Correct</div></div>
+      <div class="rb-card"><div class="rb-n" style="color:#E24B4A">${tot-sc}</div><div class="rb-l">Incorrect</div></div>
+      <div class="rb-card"><div class="rb-n">${pct}%</div><div class="rb-l">Score</div></div>
+    </div>
+    <button class="btn-restart" onclick="restart()">← Restart quiz</button>
+  </div>`;
+}
+
+function restart(){
+  cur=0;answers=new Array(QS.length).fill(null);correct=new Array(QS.length).fill(false);
+  document.querySelector('.nav').style.display='flex';
+  render();
+}
+
+render();
+</script>
